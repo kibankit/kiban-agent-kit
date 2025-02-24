@@ -1,0 +1,49 @@
+{
+  "name": "kiban-agent-kit",
+  "version": "0.1.0",
+  "description": "Open-source framework connecting AI agents to Katana ecosystem protocols",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:agent": "ts-node test/agent.test.ts",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.40",
+    "@langchain/langgraph": "^0.2.48",
+    "@langchain/openai": "^0.4.4",
+    "ai": "^4.1.45",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "viem": "^2.23.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.5",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.21.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.2",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "katana",
+    "defi",
+    "ai",
+    "agent"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
