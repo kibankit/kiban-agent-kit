@@ -4,12 +4,20 @@
   "description": "Open-source framework connecting AI agents to Katana ecosystem protocols",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "test:agent": "ts-node test/agent.test.ts",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
+    "docs": "typedoc src --out docs"
   },
   "dependencies": {
     "@langchain/core": "^0.3.40",
@@ -45,5 +53,13 @@
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kiban-network/kiban-agent-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kiban-network/kiban-agent-kit/issues"
+  },
+  "homepage": "https://github.com/kiban-network/kiban-agent-kit#readme"
 }
