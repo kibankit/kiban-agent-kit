@@ -1,7 +1,16 @@
+<div align="center">
+
+![Kiban Agent Kit Banner](assets/banner.png)
+
 # Kiban Agent Kit
 
 an open-source framework connecting defi AI agents to Katana ecosystem protocols
 
+![GitHub License](https://img.shields.io/github/license/kibankit/kiban-agent-kit?style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/kibankit/kiban-agent-kit?style=for-the-badge)
+![NPM Downloads](https://img.shields.io/npm/dm/kiban-agent-kit?style=for-the-badge)
+
+</div>
 
 ## Features
 
@@ -18,7 +27,13 @@ an open-source framework connecting defi AI agents to Katana ecosystem protocols
   - Token transfers
   - Allowance management
 - Transaction handling and receipt tracking
-- Support for both ETH and ERC20 transfers
+
+### Market Data Integration
+- DexScreener integration
+  - Token price lookup by address
+  - Token search by ticker symbol
+  - Market data (volume, liquidity)
+  - Trading pair analysis
 
 ## Installation
 
@@ -83,30 +98,20 @@ const tokenTxHash = await agent.sendTokens({
 });
 ```
 
-### Manage Token Approvals
+### Get Market Data
 
 ```typescript
-// Approve USDC spending for Uniswap V3
-const approveTxHash = await agent.approveSpending({
-  token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  spender: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-  amount: "1000"
+// Get token data by address
+const tokenData = await agent.getTokenData("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+console.log("USDC Market Data:", {
+  price: tokenData.priceUsd,
+  volume24h: tokenData.volume24h,
+  liquidity: tokenData.liquidity
 });
 
-// Check allowance
-const allowance = await agent.getAllowance({
-  token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-  owner: agent.getAddress(),
-  spender: "0xE592427A0AEce92De3Edee1F18E0157C05861564"
-});
-```
-
-### Wait for Transactions
-
-```typescript
-const tx = await agent.sendTokens({ /* ... */ });
-const result = await agent.waitForTransaction(tx);
-console.log("Transaction status:", result.status);
+// Search token by ticker
+const ethData = await agent.searchTokenByTicker("ETH");
+console.log("ETH Trading Pairs:", ethData.results);
 ```
 
 ## Environment Setup
@@ -114,83 +119,44 @@ console.log("Transaction status:", result.status);
 Create a `.env` file in your project root:
 
 ```env
-# Required
+# Required for blockchain interactions
 WALLET_PRIVATE_KEY=0x...     # Your wallet's private key
 MAINNET_RPC_URL=...         # Ethereum RPC URL (e.g., from Alchemy/Infura)
 
-# Optional
+# Required for AI agent
+OPENAI_API_KEY=...          # Your OpenAI API key
+
+# Optional configurations
 SUBMIT_TRANSACTIONS=false   # Safety flag for testing
-KATANA_RPC_URL=...         # Future Katana L2 support
-KATANA_CHAIN_ID=...        # Future Katana chain ID
+```
+
+## Testing the Agent
+
+The agent can be tested in two modes:
+
+```bash
+# Run the test suite
+pnpm test
+
+# Test the AI agent interactively
+pnpm test:agent
+```
+
+### Chat Mode
+Interactive mode for testing agent capabilities:
+```typescript
+"What's the current price of USDC?"
+"Show me the top trading pairs for WETH"
+"Check my ETH balance"
+"Transfer 0.1 ETH to 0x..."
+```
+
+### Autonomous Mode
+Automated testing of agent capabilities:
+```typescript
+await runAutonomousMode(agent, 10); // Run with 10-second intervals
 ```
 
 ## Project Structure
 
 ```
-kiban-agent-kit/
-├── src/
-│   ├── agent/              # Core agent implementation
-│   ├── tools/              # Modular functionality
-│   │   ├── wallet/         # Wallet operations
-│   │   └── token/          # Token operations
-│   ├── types/              # TypeScript types
-│   └── constants/          # Chain configs
-├── test/
-│   └── examples/           # Usage examples
-└── docs/
-    └── agent-actions.md    # API documentation
-```
-
-## Dependencies
-
-- viem: Modern EVM interactions
-- TypeScript: Type safety and developer experience
-- Node.js >=22.0.0
-
-## Development
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-3. Create `.env` file with required variables
-4. Run tests:
-   ```bash
-   pnpm test
-   ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-MIT
-
-## Security
-
-This toolkit handles private keys and transactions. Always ensure you're using it in a secure environment and never share your private keys.
-
-## Roadmap
-
-1. Market Data Integration
-   - DexScreener integration
-   - Price feeds
-   - Market analysis tools
-
-2. DEX Integration
-   - Uniswap V3 support
-   - Swap functionality
-   - Liquidity operations
-
-3. Advanced Features
-   - Contract deployment
-   - Event listening
-   - Gas optimization
-   - Transaction simulation
-
-4. Katana L2 Support
-   - Chain configuration
-   - Protocol integrations
-   - Bridge support
