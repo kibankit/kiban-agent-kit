@@ -50,6 +50,8 @@ pnpm add kiban-agent-kit
 ```typescript
 import { KibanAgentKit } from 'kiban-agent-kit';
 import { mainnet } from 'viem/chains';
+import { ChatOpenAI } from "@langchain/openai";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 
 // Initialize the agent
 const agent = new KibanAgentKit({
@@ -58,10 +60,21 @@ const agent = new KibanAgentKit({
   chain: mainnet
 });
 
-// Get wallet information
-const address = agent.getAddress();
-const balance = await agent.getNativeBalance();
-console.log(`Wallet ${address} has ${balance} ETH`);
+// Create AI agent with tools
+const llm = new ChatOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  modelName: "gpt-4-turbo-preview",
+  temperature: 0.3,
+});
+
+const aiAgent = await createReactAgent({
+  llm,
+  tools: createKibanTools(agent),
+  messageModifier: AGENT_PROMPT,
+});
+
+// Start interactive mode
+await runChatMode(aiAgent);
 ```
 
 ## Usage Examples
@@ -160,3 +173,78 @@ await runAutonomousMode(agent, 10); // Run with 10-second intervals
 ## Project Structure
 
 ```
+kiban-agent-kit/
+├── src/
+│   ├── agent/              # Core agent implementation
+│   ├── tools/              # Agent tools
+│   │   ├── wallet/         # Wallet operations
+│   │   ├── token/          # Token operations
+│   │   └── dexscreener/    # Market data tools
+│   ├── langchain/          # LangChain integration
+│   ├── types/              # TypeScript types
+│   └── constants/          # Chain configs
+├── test/
+│   ├── tools/              # Tool unit tests
+│   └── examples/           # Usage examples
+└── docs/
+    ├── agent-actions.md    # Available actions
+    ├── tool-integration.md # Tool development guide
+    └── examples.md         # Usage tutorials
+```
+
+## Dependencies
+
+- @langchain/core: ^0.1.27
+- @langchain/langgraph: ^0.0.8
+- @langchain/openai: ^0.0.14
+- viem: ^2.7.9
+- TypeScript: ^5.3.3
+- Node.js >=22.0.0
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Add your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+See our [contribution guidelines](CONTRIBUTING.md) for more details.
+
+## License
+
+MIT
+
+## Security
+
+This toolkit handles private keys and transactions. Always:
+- Use secure environment variables
+- Never commit private keys
+- Test with small amounts first
+- Enable safety flags during testing
+
+## Roadmap
+
+1. Enhanced Market Integration
+   - More DEX integrations
+   - Advanced market analytics
+
+2. DeFi Operations
+   - Uniswap V3 integration
+   - Lending protocol support
+
+3. Advanced Features
+   - Contract deployment
+   - Event listening
+   - Gas optimization
+
+4. Katana L2 Support
+   - Chain configuration
+   - Protocol integrations
+
+5. AI Capabilities
+   - Advanced reasoning
+   - Multi-step operations
+   - Portfolio management
+   - Risk assessment
