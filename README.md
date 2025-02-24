@@ -1,14 +1,14 @@
 <div align="center">
 
-![Kiban Agent Kit Banner](assets/banner.png)
-
 # Kiban Agent Kit
 
-an open-source framework connecting defi AI agents to Katana ecosystem protocols
+![Kiban Agent Kit Banner](assets/banner.png)
 
 ![GitHub License](https://img.shields.io/github/license/kibankit/kiban-agent-kit?style=for-the-badge)
 ![GitHub Stars](https://img.shields.io/github/stars/kibankit/kiban-agent-kit?style=for-the-badge)
 ![NPM Downloads](https://img.shields.io/npm/dm/kiban-agent-kit?style=for-the-badge)
+
+An open-source framework connecting defi AI agents to Katana ecosystem protocols.
 
 </div>
 
