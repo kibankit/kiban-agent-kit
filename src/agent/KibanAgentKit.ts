@@ -27,18 +27,37 @@ export class KibanAgentKit {
   private tokenTools: TokenTools;
 
   constructor(config: WalletConfig) {
+    // Validate private key
+    if (!config.privateKey) {
+      throw new Error(
+        "Private key is required. Please provide a valid private key in your configuration."
+      );
+    }
+    if (
+      typeof config.privateKey !== "string" ||
+      !config.privateKey.startsWith("0x")
+    ) {
+      throw new Error(
+        "Invalid private key format. Private key must be a hex string starting with '0x'."
+      );
+    }
+
     // Set up chain configuration
     this.chain = config.chain || mainnet;
 
     // Validate chain support
     if (!SUPPORTED_CHAINS.find((c) => c.id === this.chain.id)) {
-      throw new Error(`Chain ${this.chain.id} is not supported`);
+      throw new Error(
+        `Chain ${this.chain.id} is not supported. Supported chains are: ${SUPPORTED_CHAINS.map((c) => c.name).join(", ")}`
+      );
     }
 
     // Set up RPC URL
     const rpcUrl = config.rpcUrl || DEFAULT_RPC_URLS[this.chain.id];
     if (!rpcUrl) {
-      throw new Error(`No RPC URL provided for chain ${this.chain.id}`);
+      throw new Error(
+        `No RPC URL provided for chain ${this.chain.name} (ID: ${this.chain.id}). Please provide a valid RPC URL in your configuration.`
+      );
     }
 
     try {
@@ -75,7 +94,19 @@ export class KibanAgentKit {
       );
     } catch (err) {
       const error = err as Error;
-      throw new Error(`Failed to initialize clients: ${error.message}`);
+      if (error.message.includes("invalid private key")) {
+        throw new Error(
+          `Invalid private key: The provided private key is not in the correct format. Please ensure it's a valid 32-byte hex string starting with '0x'.`
+        );
+      } else if (error.message.includes("network")) {
+        throw new Error(
+          `Network error: Failed to connect to RPC URL ${rpcUrl}. Please check your internet connection and RPC URL validity.`
+        );
+      } else {
+        throw new Error(
+          `Failed to initialize Kiban Agent: ${error.message}. Please check your configuration and try again.`
+        );
+      }
     }
   }
 
