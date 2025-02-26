@@ -15,6 +15,17 @@ import { WalletConfig } from "../types";
 import { createWalletTools, WalletTools } from "../tools/wallet";
 import { createTokenTools, TokenTools } from "../tools/token";
 import { SUPPORTED_CHAINS, DEFAULT_RPC_URLS } from "../constants/chains";
+import { DexScreenerService } from "../tools/dexscreener";
+import { WalletService } from "../tools/wallet";
+import { TokenService } from "../tools/token";
+import {
+  TokenInfo,
+  TokenMetadata,
+  SendTokenParams,
+  ApproveParams,
+  AllowanceParams,
+  TransactionResult,
+} from "../tools/token/service";
 
 export class KibanAgentKit {
   protected clients: {
@@ -25,6 +36,11 @@ export class KibanAgentKit {
   private chain: Chain;
   private walletTools: WalletTools;
   private tokenTools: TokenTools;
+
+  // Service instances
+  private dexScreenerService: DexScreenerService;
+  private walletService: WalletService;
+  private tokenService: TokenService;
 
   constructor(config: WalletConfig) {
     // Validate private key
@@ -88,6 +104,11 @@ export class KibanAgentKit {
         this.clients.wallet,
         this.chain
       );
+
+      // Initialize services
+      this.dexScreenerService = new DexScreenerService();
+      this.walletService = new WalletService(this);
+      this.tokenService = new TokenService(this);
 
       console.log(
         `🔗 Connected to ${this.chain.name} (Chain ID: ${this.chain.id})`
@@ -174,5 +195,48 @@ export class KibanAgentKit {
       to: params.to as `0x${string}`,
       value: params.value,
     });
+  }
+
+  // DexScreener service methods
+  async getTokenData(tokenAddress: string) {
+    return this.dexScreenerService.getTokenData(tokenAddress);
+  }
+
+  async searchTokenByTicker(ticker: string) {
+    return this.dexScreenerService.searchTokenByTicker(ticker);
+  }
+
+  // Wallet service methods
+  async getWalletInfo() {
+    return this.walletService.getWalletInfo();
+  }
+
+  async getTransactionHistory(limit: number = 5) {
+    return this.walletService.getTransactionHistory(limit);
+  }
+
+  async estimateGasForTransaction(to?: string, value?: string) {
+    return this.walletService.estimateGas(to, value);
+  }
+
+  // Token service methods
+  async getTokenInfo(tokenAddress: string): Promise<TokenInfo> {
+    return this.tokenService.getTokenInfo(tokenAddress);
+  }
+
+  async sendTokensWithService(
+    params: SendTokenParams
+  ): Promise<TransactionResult> {
+    return this.tokenService.sendTokens(params);
+  }
+
+  async approveTokenSpending(
+    params: ApproveParams
+  ): Promise<TransactionResult> {
+    return this.tokenService.approveSpending(params);
+  }
+
+  async getTokenAllowance(params: AllowanceParams): Promise<bigint> {
+    return this.tokenService.getAllowance(params);
   }
 }

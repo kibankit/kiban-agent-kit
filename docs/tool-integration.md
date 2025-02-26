@@ -4,163 +4,124 @@ This guide explains how to create and integrate new tools into the Kiban Agent K
 
 ## Table of Contents
 
-1. [Tool Structure](#tool-structure)
-2. [Creating a New Tool](#creating-a-new-tool)
-3. [Tool Integration Process](#tool-integration-process)
-4. [Best Practices](#best-practices)
-5. [Examples](#examples)
+1. [Architecture Overview](#architecture-overview)
+2. [Core Services](#core-services)
+3. [LangChain Tools](#langchain-tools)
+4. [Integration Process](#integration-process)
+5. [Best Practices](#best-practices)
+6. [Examples](#examples)
 
-## Tool Structure
+## Architecture Overview
 
-Tools in the Kiban Agent Kit are built on top of LangChain's `StructuredTool` class. Each tool must define:
+Kiban Agent Kit follows a layered architecture:
 
-1. A unique name
-2. A clear description
-3. An input schema using Zod
-4. An implementation of the `_call` method
+1. **Core Services**: Blockchain interaction services that don't depend on LangChain
+2. **Agent Class**: The main `KibanAgentKit` class that exposes core functionality
+3. **LangChain Tools**: Structured tools that wrap core services for AI agent use
 
-Basic tool structure:
+This separation allows developers to:
+- Use core blockchain functionality without LangChain dependencies
+- Create AI agents with LangChain integration
+- Extend the toolkit with new capabilities at any layer
+
+## Core Services
+
+Core services handle direct blockchain interactions and are located in the `src/tools/` directory. Each service should:
+
+1. Be focused on a specific domain (e.g., wallet, token, market data)
+2. Not depend on LangChain or other AI libraries
+3. Return structured data rather than strings
+4. Handle errors gracefully
+
+### Creating a New Core Service
+
+1. Create a new directory in `src/tools/` for your domain
+2. Create a `service.ts` file with your service class
+3. Define interfaces for input parameters and return types
+4. Implement methods for blockchain interactions
+5. Export the service from an `index.ts` file
+
+Example of a core service:
 
 ```typescript
-import { StructuredTool } from "@langchain/core/tools";
-import { z } from "zod";
+// src/tools/myprotocol/service.ts
+import { KibanAgentKit } from "../../agent/KibanAgentKit";
 
-export class MyCustomTool extends StructuredTool {
-  name = "my_custom_tool";
-  description = "Clear description of what the tool does";
-  schema = z.object({
-    param1: z.string().describe("Description of param1"),
-    param2: z.number().describe("Description of param2"),
-  });
+export interface ProtocolData {
+  name: string;
+  tvl: string;
+  apy: string;
+}
 
-  protected async _call(input: z.input<typeof this.schema>): Promise<string> {
-    // Implementation goes here
-    return "Result as string";
+export class MyProtocolService {
+  constructor(private agent: KibanAgentKit) {}
+
+  async getProtocolData(protocolId: string): Promise<ProtocolData> {
+    // Implementation
+    return {
+      name: "Protocol Name",
+      tvl: "$1,000,000",
+      apy: "5.2%"
+    };
   }
 }
 ```
 
-## Creating a New Tool
+### Exposing Core Service in the Agent
 
-1. Create a new file in the appropriate directory under `src/tools/`
+After creating a core service, expose it in the `KibanAgentKit` class:
+
+```typescript
+// src/agent/KibanAgentKit.ts
+import { MyProtocolService } from "../tools/myprotocol/service";
+
+export class KibanAgentKit {
+  private myProtocolService: MyProtocolService;
+  
+  constructor(config: WalletConfig) {
+    // Existing initialization
+    
+    // Initialize your service
+    this.myProtocolService = new MyProtocolService(this);
+  }
+  
+  // Expose service methods
+  async getProtocolData(protocolId: string) {
+    return this.myProtocolService.getProtocolData(protocolId);
+  }
+}
+```
+
+## LangChain Tools
+
+LangChain tools wrap core services for use with AI agents. They are located in the `src/langchain/` directory and follow the LangChain `StructuredTool` pattern.
+
+Each LangChain tool should:
+1. Have a unique name in snake_case
+2. Provide a clear description for the AI
+3. Define an input schema using Zod
+4. Return results as strings (usually JSON)
+
+### Creating a New LangChain Tool
+
+1. Create a new file in `src/langchain/` for your domain
 2. Define your tool class extending `StructuredTool`
 3. Implement the required properties and methods
-4. Export your tool
+4. Use the core service for blockchain interactions
 
-Example creating a price alert tool:
+Example of a LangChain tool:
 
 ```typescript
-// src/tools/market/price_alert.ts
+// src/langchain/myprotocol.ts
 import { StructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
+import { KibanAgentKit } from "../agent/KibanAgentKit";
 
-export class PriceAlertTool extends StructuredTool {
-  name = "set_price_alert";
-  description = "Set a price alert for a token";
+export class ProtocolDataTool extends StructuredTool {
+  name = "get_protocol_data";
+  description = "Get information about a DeFi protocol including TVL and APY";
   schema = z.object({
-    tokenAddress: z.string().describe("The token address to monitor"),
-    targetPrice: z.number().describe("Target price to trigger alert"),
-    condition: z.enum(["above", "below"]).describe("Alert when price goes above or below target"),
-  });
-
-  protected async _call(input: z.input<typeof this.schema>): Promise<string> {
-    // Implementation
-    return `Price alert set for ${input.tokenAddress} at ${input.targetPrice}`;
-  }
-}
-```
-
-## Tool Integration Process
-
-Tools are automatically integrated when added to the `createKibanTools` function in `src/langchain/index.ts`. The process is:
-
-1. Import your tool:
-```typescript
-import { MyCustomTool } from "../tools/my_custom_tool";
-```
-
-2. Add it to the return array in `createKibanTools`:
-```typescript
-export function createKibanTools(agent: KibanAgentKit): Array<StructuredTool> {
-  return [
-    // ... existing tools ...
-    new MyCustomTool(),
-  ];
-}
-```
-
-3. Update the agent prompt in `test/agent.test.ts` to include the new capability:
-```typescript
-const AGENT_PROMPT = `
-// ... existing prompt ...
-Available actions:
-// ... existing actions ...
-5. Your new tool description
-`;
-```
-
-## Best Practices
-
-1. **Naming Conventions**
-   - Use snake_case for tool names
-   - Use descriptive names that indicate the action
-   - Avoid generic names that might conflict
-
-2. **Description Guidelines**
-   - Be specific about what the tool does
-   - Include example inputs if helpful
-   - Mention any limitations or requirements
-
-3. **Input Validation**
-   - Use Zod schemas to validate all inputs
-   - Add descriptive messages for validation errors
-   - Consider adding custom validation rules
-
-4. **Error Handling**
-   - Always return meaningful error messages
-   - Catch and handle expected errors gracefully
-   - Return errors in a consistent format
-
-5. **Testing**
-   - Add unit tests for your tool in `test/tools/`
-   - Test both success and error cases
-   - Mock external dependencies
-
-## Examples
-
-Here are some examples of tools in the Kiban Agent Kit:
-
-### Market Data Tool
-```typescript
-// src/tools/dexscreener/get_token_data.ts
-export class GetTokenDataTool extends StructuredTool {
-  name = "get_token_data";
-  description = "Get token price and market data from DexScreener";
-  schema = z.object({
-    tokenAddress: z.string().describe("The token contract address"),
-  });
-
-  protected async _call(input: z.input<typeof this.schema>): Promise<string> {
-    try {
-      // Implementation
-      return JSON.stringify(result, null, 2);
-    } catch (error) {
-      return `Error: ${error.message}`;
-    }
-  }
-}
-```
-
-### Token Transfer Tool
-```typescript
-// src/tools/token/transfer.ts
-export class TokenTransferTool extends StructuredTool {
-  name = "transfer_tokens";
-  description = "Transfer tokens to another address";
-  schema = z.object({
-    to: z.string().describe("Recipient address"),
-    amount: z.string().describe("Amount to transfer"),
-    tokenAddress: z.string().optional().describe("Optional token address (ETH if not provided)"),
+    protocolId: z.string().describe("The protocol identifier"),
   });
 
   constructor(private agent: KibanAgentKit) {
@@ -169,10 +130,154 @@ export class TokenTransferTool extends StructuredTool {
 
   protected async _call(input: z.input<typeof this.schema>): Promise<string> {
     try {
-      // Implementation
-      return `Transfer successful: ${txHash}`;
+      const data = await this.agent.getProtocolData(input.protocolId);
+      return JSON.stringify(data, null, 2);
+    } catch (error: any) {
+      return `Error getting protocol data: ${error.message}`;
+    }
+  }
+}
+```
+
+## Integration Process
+
+To fully integrate a new tool:
+
+1. Create the core service in `src/tools/`
+2. Expose the service methods in `KibanAgentKit`
+3. Create LangChain tools in `src/langchain/`
+4. Add the tools to `createKibanTools` in `src/langchain/index.ts`:
+
+```typescript
+import { ProtocolDataTool } from "./myprotocol";
+
+export function createKibanTools(agent: KibanAgentKit): Array<StructuredTool> {
+  return [
+    // ... existing tools ...
+    new ProtocolDataTool(agent),
+  ];
+}
+
+// Re-export the tool
+export * from "./myprotocol";
+```
+
+5. Update the agent prompt in `test/agent.test.ts` to include the new capability:
+```typescript
+const AGENT_PROMPT = `
+// ... existing prompt ...
+Available actions:
+// ... existing actions ...
+5. Get information about DeFi protocols including TVL and APY
+`;
+```
+
+6. Update documentation in `docs/agent-actions.md`
+
+## Best Practices
+
+1. **Separation of Concerns**
+   - Keep core blockchain logic separate from LangChain integration
+   - Use interfaces to define clear contracts between layers
+   - Handle errors at the appropriate level
+
+2. **Naming Conventions**
+   - Use PascalCase for service and tool classes
+   - Use snake_case for LangChain tool names
+   - Use camelCase for methods and properties
+
+3. **Input Validation**
+   - Validate inputs at both service and tool levels
+   - Use Zod schemas for LangChain tools
+   - Provide clear error messages
+
+4. **Error Handling**
+   - Catch and handle expected errors gracefully
+   - Return structured errors from services
+   - Convert errors to strings in LangChain tools
+
+5. **Testing**
+   - Add unit tests for services in `test/tools/`
+   - Add integration tests for LangChain tools
+   - Test both success and error cases
+
+## Examples
+
+Here are some examples from the Kiban Agent Kit:
+
+### Core Service Example
+```typescript
+// src/tools/dexscreener/service.ts
+export class DexScreenerService {
+  async getTokenData(tokenAddress: string): Promise<TokenData | null> {
+    try {
+      const response = await axios.get(
+        `${DEXSCREENER_API}/tokens/${tokenAddress}`
+      );
+
+      if (!response.data.pairs || response.data.pairs.length === 0) {
+        return null;
+      }
+
+      const pair = response.data.pairs[0];
+      return {
+        name: pair.baseToken.name,
+        symbol: pair.baseToken.symbol,
+        address: pair.baseToken.address as `0x${string}`,
+        priceUsd: pair.priceUsd || "N/A",
+        volume24h: pair.volume.h24 || "N/A",
+        liquidity: pair.liquidity.usd || "N/A",
+        pairAddress: pair.pairAddress,
+      };
     } catch (error) {
-      return `Error: ${error.message}`;
+      throw new Error(
+        `Failed to fetch token data: ${(error as Error).message}`
+      );
+    }
+  }
+}
+```
+
+### LangChain Tool Example
+```typescript
+// src/langchain/dexscreener.ts
+export class GetTokenDataTool extends StructuredTool {
+  name = "get_token_data";
+  description = "Get token price and market data from DexScreener";
+  schema = z.object({
+    tokenAddress: z.string().describe("The token contract address"),
+  });
+
+  private service: DexScreenerService;
+
+  constructor() {
+    super();
+    this.service = new DexScreenerService();
+  }
+
+  protected async _call(input: z.input<typeof this.schema>): Promise<string> {
+    try {
+      const tokenData = await this.service.getTokenData(input.tokenAddress);
+
+      if (!tokenData) {
+        return "No data found for this token";
+      }
+
+      return JSON.stringify(
+        {
+          name: tokenData.name,
+          symbol: tokenData.symbol,
+          address: tokenData.address,
+          price_usd: tokenData.priceUsd,
+          volume_24h: tokenData.volume24h,
+          liquidity: tokenData.liquidity,
+          pair_address: tokenData.pairAddress,
+        },
+        null,
+        2
+      );
+    } catch (error: any) {
+      return `Error fetching token data: ${error.message}`;
     }
   }
 }
@@ -182,10 +287,11 @@ export class TokenTransferTool extends StructuredTool {
 
 When contributing new tools:
 
-1. Follow the structure and naming conventions
-2. Add comprehensive documentation
-3. Include unit tests
-4. Update the agent prompt
-5. Submit a pull request
+1. Follow the architecture and naming conventions
+2. Implement both core service and LangChain tools
+3. Add comprehensive documentation
+4. Include unit tests
+5. Update the agent prompt
+6. Submit a pull request
 
 For more information on contributing, see our [contribution guidelines](../CONTRIBUTING.md). 

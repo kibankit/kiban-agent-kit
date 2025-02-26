@@ -18,6 +18,8 @@ An open-source framework connecting defi AI agents to Katana ecosystem protocols
 - Wallet address management
 - Chain information and network state
 - Native token (ETH) balance tracking
+- Transaction history tracking
+- Gas price estimation
 - Multi-chain support foundation
 
 ### Token Operations
@@ -34,6 +36,12 @@ An open-source framework connecting defi AI agents to Katana ecosystem protocols
   - Token search by ticker symbol
   - Market data (volume, liquidity)
   - Trading pair analysis
+
+### AI Agent Integration
+- LangChain structured tools
+- Seamless integration with LLM agents
+- Comprehensive agent prompt templates
+- Interactive and autonomous modes
 
 ## Installation
 
@@ -79,39 +87,54 @@ await runChatMode(aiAgent);
 
 ## Usage Examples
 
-### Check Token Information
+### Core Wallet Operations
 
 ```typescript
-// Check USDC token info and balance
+// Get wallet information
+const walletInfo = await agent.getWalletInfo();
+console.log("Wallet Info:", walletInfo);
+
+// Get transaction history
+const history = await agent.getTransactionHistory();
+console.log("Transaction History:", history);
+
+// Estimate gas for a transaction
+const gasEstimate = await agent.estimateGasForTransaction(
+  "0x1234...", // recipient address
+  "0.1" // amount in ETH
+);
+console.log("Gas Estimate:", gasEstimate);
+```
+
+### Token Operations
+
+```typescript
+// Check token information
 const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const tokenInfo = await agent.checkToken(usdc);
+const tokenInfo = await agent.getTokenInfo(usdc);
 console.log("Token Info:", {
   name: tokenInfo.name,
   symbol: tokenInfo.symbol,
   decimals: tokenInfo.decimals,
   balance: tokenInfo.balance
 });
-```
 
-### Send Tokens
-
-```typescript
-// Send ETH
+// Send tokens
 const ethTxHash = await agent.sendTokens({
   token: "eth",
   to: "0x...",
   amount: "0.1"
 });
 
-// Send ERC20
-const tokenTxHash = await agent.sendTokens({
+// Approve token spending
+const approvalTx = await agent.approveTokenSpending({
   token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
-  to: "0x...",
+  spender: "0x...", // e.g., Uniswap Router
   amount: "100"
 });
 ```
 
-### Get Market Data
+### Market Data Operations
 
 ```typescript
 // Get token data by address
@@ -176,11 +199,14 @@ await runAutonomousMode(agent, 10); // Run with 10-second intervals
 kiban-agent-kit/
 ├── src/
 │   ├── agent/              # Core agent implementation
-│   ├── tools/              # Agent tools
+│   ├── tools/              # Core blockchain tools
 │   │   ├── wallet/         # Wallet operations
 │   │   ├── token/          # Token operations
 │   │   └── dexscreener/    # Market data tools
 │   ├── langchain/          # LangChain integration
+│   │   ├── wallet.ts       # Wallet LangChain tools
+│   │   ├── token.ts        # Token LangChain tools
+│   │   └── dexscreener.ts  # Market data LangChain tools
 │   ├── types/              # TypeScript types
 │   └── constants/          # Chain configs
 ├── test/

@@ -44,6 +44,71 @@ const balance = await agent.getNativeBalance();
 console.log("ETH Balance:", balance);
 ```
 
+### Get Wallet Info
+- **Method**: `getWalletInfo()`
+- **Description**: Get comprehensive information about the connected wallet
+- **Returns**: Wallet information including address, balance, chain details, and a human-readable message
+- **Example**:
+```typescript
+const info = await agent.getWalletInfo();
+console.log("Wallet Info:", info);
+```
+
+### Get Transaction History
+- **Method**: `getTransactionHistory(limit?: number)`
+- **Description**: Get transaction history for the connected wallet
+- **Parameters**:
+  - `limit`: Optional maximum number of transactions to return (default: 5)
+- **Returns**: Transaction history including count and Etherscan link
+- **Example**:
+```typescript
+const history = await agent.getTransactionHistory(10);
+console.log("Transaction History:", history);
+```
+
+### Estimate Gas
+- **Method**: `estimateGas(params: { to: string; value: bigint })`
+- **Description**: Estimate gas units required for a transaction
+- **Parameters**:
+  - `params.to`: Recipient address
+  - `params.value`: Amount in wei
+- **Returns**: Estimated gas units as bigint
+- **Example**:
+```typescript
+const gas = await agent.estimateGas({
+  to: "0x...",
+  value: BigInt("1000000000000000000") // 1 ETH
+});
+console.log("Gas Units:", gas.toString());
+```
+
+### Estimate Gas For Transaction
+- **Method**: `estimateGasForTransaction(to?: string, value?: string)`
+- **Description**: Get current gas prices and estimate transaction costs
+- **Parameters**:
+  - `to`: Optional recipient address
+  - `value`: Optional amount in ETH
+- **Returns**: Gas estimate including current gas price and estimated cost
+- **Example**:
+```typescript
+const estimate = await agent.estimateGasForTransaction(
+  "0x...",
+  "0.1"
+);
+console.log("Gas Price:", estimate.currentGasPrice);
+console.log("Estimated Cost:", estimate.transactionDetails?.estimatedCostEth);
+```
+
+### Get Gas Price
+- **Method**: `getGasPrice()`
+- **Description**: Get the current gas price
+- **Returns**: Gas price in wei as bigint
+- **Example**:
+```typescript
+const gasPrice = await agent.getGasPrice();
+console.log("Gas Price (wei):", gasPrice.toString());
+```
+
 ## Token Operations
 
 ### Check Token
@@ -56,6 +121,18 @@ console.log("ETH Balance:", balance);
 ```typescript
 const usdc = await agent.checkToken("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
 console.log("USDC Info:", usdc);
+```
+
+### Get Token Info
+- **Method**: `getTokenInfo(tokenAddress: string)`
+- **Description**: Get information about a token including balance
+- **Parameters**:
+  - `tokenAddress`: Token contract address
+- **Returns**: Token information including name, symbol, decimals, and balance
+- **Example**:
+```typescript
+const info = await agent.getTokenInfo("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+console.log("Token Info:", info);
 ```
 
 ### Get Token Metadata
@@ -96,7 +173,25 @@ const usdcTx = await agent.sendTokens({
 });
 ```
 
-### Approve Token Spending
+### Send Tokens With Service
+- **Method**: `sendTokensWithService(params: SendTokenParams)`
+- **Description**: Send tokens using the TokenService
+- **Parameters**:
+  - `token`: "eth" or token address
+  - `to`: Recipient address
+  - `amount`: Amount in human-readable format
+- **Returns**: Transaction result with hash
+- **Example**:
+```typescript
+const result = await agent.sendTokensWithService({
+  token: "eth",
+  to: "0x...",
+  amount: "0.1"
+});
+console.log("Transaction Hash:", result.hash);
+```
+
+### Approve Spending
 - **Method**: `approveSpending(params: ApproveParams)`
 - **Description**: Approve a spender (e.g., DEX) to spend tokens
 - **Parameters**:
@@ -111,6 +206,24 @@ const tx = await agent.approveSpending({
   spender: "0x...", // e.g., Uniswap Router
   amount: "1000"
 });
+```
+
+### Approve Token Spending
+- **Method**: `approveTokenSpending(params: ApproveParams)`
+- **Description**: Approve token spending using the TokenService
+- **Parameters**:
+  - `token`: Token address
+  - `spender`: Spender address
+  - `amount`: Amount in human-readable format
+- **Returns**: Transaction result with hash
+- **Example**:
+```typescript
+const result = await agent.approveTokenSpending({
+  token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  spender: "0x...",
+  amount: "1000"
+});
+console.log("Transaction Hash:", result.hash);
 ```
 
 ### Get Token Allowance
@@ -130,6 +243,24 @@ const allowance = await agent.getAllowance({
 });
 ```
 
+### Get Token Allowance (Service)
+- **Method**: `getTokenAllowance(params: AllowanceParams)`
+- **Description**: Get token allowance using the TokenService
+- **Parameters**:
+  - `token`: Token address
+  - `owner`: Token owner address
+  - `spender`: Spender address
+- **Returns**: Allowance amount as bigint
+- **Example**:
+```typescript
+const allowance = await agent.getTokenAllowance({
+  token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  owner: agent.getAddress(),
+  spender: "0x..."
+});
+console.log("Allowance:", allowance.toString());
+```
+
 ### Wait for Transaction
 - **Method**: `waitForTransaction(hash: Hash)`
 - **Description**: Wait for a transaction to be mined and get its receipt
@@ -142,6 +273,32 @@ const tx = await agent.sendTokens({ ... });
 const result = await agent.waitForTransaction(tx);
 const receipt = await result.wait();
 console.log("Transaction status:", receipt.status);
+```
+
+## Market Data Operations
+
+### Get Token Data
+- **Method**: `getTokenData(tokenAddress: string)`
+- **Description**: Get token price and market data from DexScreener
+- **Parameters**:
+  - `tokenAddress`: Token contract address
+- **Returns**: Token data including price, volume, and liquidity
+- **Example**:
+```typescript
+const data = await agent.getTokenData("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+console.log("Token Data:", data);
+```
+
+### Search Token By Ticker
+- **Method**: `searchTokenByTicker(ticker: string)`
+- **Description**: Search for tokens by ticker symbol
+- **Parameters**:
+  - `ticker`: Token ticker symbol (e.g., "ETH", "USDC")
+- **Returns**: Search results with matching tokens
+- **Example**:
+```typescript
+const results = await agent.searchTokenByTicker("ETH");
+console.log("Search Results:", results);
 ```
 
 ## Market Analysis
@@ -202,8 +359,8 @@ await agent.trackToken("USDC");
 ```
 
 ## Coming Soon
-- Token symbol resolution (lookup by symbol)
-- Market data integration
+- Token symbol resolution (lookup by token symbol)
+- Portfolio management
 - DEX integration
 - Price feeds
 - Contract deployment
