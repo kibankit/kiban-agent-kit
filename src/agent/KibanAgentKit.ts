@@ -17,7 +17,7 @@ import { createTokenTools, TokenTools } from "../tools/token";
 import { SUPPORTED_CHAINS, DEFAULT_RPC_URLS } from "../constants/chains";
 
 export class KibanAgentKit {
-  private clients: {
+  protected clients: {
     public: PublicClient;
     wallet: WalletClient;
   };
@@ -156,5 +156,23 @@ export class KibanAgentKit {
 
   async waitForTransaction(hash: Hash) {
     return this.tokenTools.waitForTransaction(hash);
+  }
+
+  // Add a method to get gas price
+  async getGasPrice(): Promise<bigint> {
+    return this.clients.public.getGasPrice();
+  }
+
+  // Add a method to estimate gas
+  async estimateGas(params: { to: string; value: bigint }): Promise<bigint> {
+    if (!isAddress(params.to)) {
+      throw new Error(`Invalid address: ${params.to}`);
+    }
+
+    return this.clients.public.estimateGas({
+      account: this.account.address,
+      to: params.to as `0x${string}`,
+      value: params.value,
+    });
   }
 }

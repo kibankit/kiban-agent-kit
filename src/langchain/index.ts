@@ -6,6 +6,9 @@ import {
   GetTokenDataTool,
   SearchTokenByTickerTool,
 } from "../tools/dexscreener/get_token_data";
+import { WalletInfoTool } from "../tools/wallet/wallet_info";
+import { GasEstimatorTool } from "../tools/wallet/gas_estimator";
+import { TransactionHistoryTool } from "../tools/wallet/transaction_history";
 
 /**
  * Tool for checking native token (ETH) balance
@@ -117,6 +120,9 @@ export function createKibanTools(
   | TokenInfoTool
   | GetTokenDataTool
   | SearchTokenByTickerTool
+  | WalletInfoTool
+  | GasEstimatorTool
+  | TransactionHistoryTool
 > {
   return [
     new EvmBalanceTool(agent),
@@ -124,5 +130,8 @@ export function createKibanTools(
     new TokenInfoTool(agent),
     new GetTokenDataTool(),
     new SearchTokenByTickerTool(),
+    new WalletInfoTool(agent),
+    new GasEstimatorTool(agent),
+    new TransactionHistoryTool(agent),
   ];
 }
