@@ -47,3 +47,6 @@ export function createWalletTools(
     },
   };
 }
+
+// Export the wallet service
+export * from "./service";

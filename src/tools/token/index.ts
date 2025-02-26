@@ -257,3 +257,6 @@ export function createTokenTools(
     },
   };
 }
+
+// Export the token service
+export * from "./service";

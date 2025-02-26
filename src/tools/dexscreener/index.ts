@@ -1,1 +1,2 @@
-export * from "./get_token_data";
+// Export the dexscreener service
+export * from "./service";
