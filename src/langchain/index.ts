@@ -14,6 +14,9 @@ import {
 
 import { TokenInfoTool, TokenApprovalTool, TokenAllowanceTool } from "./token";
 
+// Import swap tools
+import { GetSwapQuoteTool, SwapTokensTool } from "./swap";
+
 /**
  * Creates all available tools for the Kiban Agent Kit
  */
@@ -34,6 +37,10 @@ export function createKibanTools(agent: KibanAgentKit): Array<StructuredTool> {
     // DexScreener tools
     new GetTokenDataTool(),
     new SearchTokenByTickerTool(),
+
+    // Swap tools
+    new GetSwapQuoteTool(agent),
+    new SwapTokensTool(agent),
   ];
 }
 
@@ -41,3 +48,4 @@ export function createKibanTools(agent: KibanAgentKit): Array<StructuredTool> {
 export * from "./dexscreener";
 export * from "./wallet";
 export * from "./token";
+export * from "./swap";
