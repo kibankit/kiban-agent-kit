@@ -361,7 +361,52 @@ await agent.trackToken("USDC");
 ## Coming Soon
 - Token symbol resolution (lookup by token symbol)
 - Portfolio management
-- DEX integration
 - Price feeds
 - Contract deployment
 - Event listening 
+
+## Swap Operations
+
+### Get Swap Quote
+- **Method**: `getSwapQuote(params: SwapParams)`
+- **Description**: Get a quote for swapping tokens using Uniswap V3
+- **Parameters**:
+  - `tokenIn`: Input token address or symbol (e.g., "ETH", "USDC")
+  - `tokenOut`: Output token address or symbol (e.g., "ETH", "USDC")
+  - `amount`: Amount of input token to swap as a string (e.g., "0.0001")
+  - `slippagePercentage`: Optional slippage tolerance percentage (default: 0.5)
+- **Returns**: Swap quote including expected output amount, execution price, and price impact
+- **Example**:
+```typescript
+const quote = await agent.getSwapQuote({
+  tokenIn: "ETH",
+  tokenOut: "USDC",
+  amount: "0.0001",
+  slippagePercentage: 0.5
+});
+console.log("Expected output:", quote.tokenOut.amount);
+console.log("Execution price:", quote.executionPrice);
+```
+
+### Swap Tokens
+- **Method**: `swapTokens(params: SwapParams)`
+- **Description**: Execute a token swap using Uniswap V3
+- **Parameters**:
+  - `tokenIn`: Input token address or symbol (e.g., "ETH", "USDC")
+  - `tokenOut`: Output token address or symbol (e.g., "ETH", "USDC")
+  - `amount`: Amount of input token to swap as a string (e.g., "0.0001")
+  - `slippagePercentage`: Optional slippage tolerance percentage (default: 0.5)
+  - `recipient`: Optional recipient address (default: sender's address)
+- **Returns**: Swap result including transaction hash and expected output amount
+- **Example**:
+```typescript
+const result = await agent.swapTokens({
+  tokenIn: "ETH",
+  tokenOut: "USDC",
+  amount: "0.0001",
+  slippagePercentage: 0.5
+});
+console.log("Transaction hash:", result.hash);
+console.log("Swapped:", result.amountIn, result.tokenIn);
+console.log("Received approximately:", result.expectedAmountOut, result.tokenOut);
+``` 

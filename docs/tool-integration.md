@@ -295,3 +295,151 @@ When contributing new tools:
 6. Submit a pull request
 
 For more information on contributing, see our [contribution guidelines](../CONTRIBUTING.md). 
+
+## Swap Tools Example
+
+Here's an example of the swap functionality implementation:
+
+### Core Service Example (Swap)
+```typescript
+// src/tools/token/swap.ts
+export class SwapService {
+  constructor(private agent: KibanAgentKit) {}
+
+  /**
+   * Get a quote for swapping tokens
+   */
+  async getSwapQuote(params: SwapParams): Promise<SwapQuote> {
+    const { tokenIn, tokenOut, amount, slippagePercentage = 0.5 } = params;
+
+    // Normalize token addresses
+    const normalizedTokenIn = this.normalizeTokenAddress(tokenIn);
+    const normalizedTokenOut = this.normalizeTokenAddress(tokenOut);
+
+    // Check if we're dealing with ETH
+    const isETHIn = normalizedTokenIn === COMMON_TOKENS.ETH;
+    const isETHOut = normalizedTokenOut === COMMON_TOKENS.ETH;
+
+    // Get token metadata - use WETH for ETH
+    const tokenInInfo = await this.agent.getTokenInfo(
+      isETHIn ? COMMON_TOKENS.WETH : normalizedTokenIn
+    );
+    const tokenOutInfo = await this.agent.getTokenInfo(
+      isETHOut ? COMMON_TOKENS.WETH : normalizedTokenOut
+    );
+
+    // Get quote from Uniswap V3 Quoter
+    // ... implementation details ...
+
+    return {
+      tokenIn: {
+        address: normalizedTokenIn,
+        symbol: tokenInInfo.symbol,
+        decimals: tokenInInfo.decimals,
+        amount: formattedAmountIn,
+      },
+      tokenOut: {
+        address: normalizedTokenOut,
+        symbol: tokenOutInfo.symbol,
+        decimals: tokenOutInfo.decimals,
+        amount: formattedAmountOut,
+      },
+      executionPrice: `1 ${tokenInInfo.symbol} = ${formattedExecutionPrice} ${tokenOutInfo.symbol}`,
+      minimumAmountOut: formattedMinimumAmountOut,
+      priceImpact,
+    };
+  }
+
+  /**
+   * Execute a token swap
+   */
+  async swapTokens(params: SwapParams): Promise<SwapResult> {
+    // ... implementation details ...
+  }
+}
+```
+
+### LangChain Tool Example (Swap)
+```typescript
+// src/langchain/swap.ts
+export class GetSwapQuoteTool extends StructuredTool {
+  name = "get_swap_quote";
+  description =
+    "Get a quote for swapping tokens, including expected output amount and price impact";
+  schema = z.object({
+    tokenIn: z
+      .string()
+      .describe("The input token address or symbol (e.g., 'ETH', 'USDC')"),
+    tokenOut: z
+      .string()
+      .describe("The output token address or symbol (e.g., 'ETH', 'USDC')"),
+    amount: z.string().describe("The amount of input token to swap"),
+    slippagePercentage: z
+      .number()
+      .optional()
+      .describe("Optional slippage tolerance percentage (default: 0.5)"),
+  });
+
+  private service: SwapService;
+
+  constructor(agent: KibanAgentKit) {
+    super();
+    this.service = new SwapService(agent);
+  }
+
+  protected async _call(input: z.input<typeof this.schema>) {
+    try {
+      const quote = await this.service.getSwapQuote({
+        tokenIn: input.tokenIn,
+        tokenOut: input.tokenOut,
+        amount: input.amount,
+        slippagePercentage: input.slippagePercentage,
+      });
+
+      return JSON.stringify(
+        {
+          tokenIn: {
+            symbol: quote.tokenIn.symbol,
+            amount: quote.tokenIn.amount,
+          },
+          tokenOut: {
+            symbol: quote.tokenOut.symbol,
+            amount: quote.tokenOut.amount,
+          },
+          executionPrice: quote.executionPrice,
+          minimumAmountOut: quote.minimumAmountOut,
+          priceImpact: quote.priceImpact,
+          message: `You can swap ${quote.tokenIn.amount} ${quote.tokenIn.symbol} for approximately ${quote.tokenOut.amount} ${quote.tokenOut.symbol} (minimum: ${quote.minimumAmountOut} ${quote.tokenOut.symbol}).`,
+        },
+        null,
+        2
+      );
+    } catch (error: any) {
+      return `Error getting swap quote: ${error.message}`;
+    }
+  }
+}
+
+export class SwapTokensTool extends StructuredTool {
+  name = "swap_tokens";
+  description = "Execute a token swap using Uniswap V3";
+  schema = z.object({
+    tokenIn: z
+      .string()
+      .describe("The input token address or symbol (e.g., 'ETH', 'USDC')"),
+    tokenOut: z
+      .string()
+      .describe("The output token address or symbol (e.g., 'ETH', 'USDC')"),
+    amount: z.string().describe("The amount of input token to swap"),
+    slippagePercentage: z
+      .number()
+      .optional()
+      .describe("Optional slippage tolerance percentage (default: 0.5)"),
+    recipient: z
+      .string()
+      .optional()
+      .describe("Optional recipient address (default: sender's address)"),
+  });
+
+  // ... implementation details ...
+} 

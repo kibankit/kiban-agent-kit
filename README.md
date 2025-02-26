@@ -30,6 +30,13 @@ An open-source framework connecting defi AI agents to Katana ecosystem protocols
   - Allowance management
 - Transaction handling and receipt tracking
 
+### DeFi Operations
+- Uniswap V3 integration
+  - Token swaps (ETH <-> ERC20, ERC20 <-> ERC20)
+  - Swap quotes and price impact estimation
+  - Slippage protection
+  - Transaction execution
+
 ### Market Data Integration
 - DexScreener integration
   - Token price lookup by address
@@ -99,55 +106,62 @@ const history = await agent.getTransactionHistory();
 console.log("Transaction History:", history);
 
 // Estimate gas for a transaction
-const gasEstimate = await agent.estimateGasForTransaction(
-  "0x1234...", // recipient address
-  "0.1" // amount in ETH
-);
+const gasEstimate = await agent.estimateGasForTransaction("0x...", "0.1");
 console.log("Gas Estimate:", gasEstimate);
 ```
 
 ### Token Operations
 
 ```typescript
-// Check token information
-const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const tokenInfo = await agent.getTokenInfo(usdc);
-console.log("Token Info:", {
-  name: tokenInfo.name,
-  symbol: tokenInfo.symbol,
-  decimals: tokenInfo.decimals,
-  balance: tokenInfo.balance
-});
+// Get token information
+const tokenInfo = await agent.getTokenInfo("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+console.log("USDC Info:", tokenInfo);
 
 // Send tokens
-const ethTxHash = await agent.sendTokens({
-  token: "eth",
-  to: "0x...",
-  amount: "0.1"
-});
-
-// Approve token spending
-const approvalTx = await agent.approveTokenSpending({
+const txHash = await agent.sendTokens({
   token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
-  spender: "0x...", // e.g., Uniswap Router
+  to: "0x...",
   amount: "100"
 });
+console.log("Transaction Hash:", txHash);
 ```
 
-### Market Data Operations
+### Swap Operations
 
 ```typescript
-// Get token data by address
-const tokenData = await agent.getTokenData("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
-console.log("USDC Market Data:", {
-  price: tokenData.priceUsd,
-  volume24h: tokenData.volume24h,
-  liquidity: tokenData.liquidity
+// Get a swap quote
+const quote = await agent.getSwapQuote({
+  tokenIn: "ETH",
+  tokenOut: "USDC",
+  amount: "0.0001",
+  slippagePercentage: 0.5
 });
+console.log("Expected output:", quote.tokenOut.amount);
+console.log("Execution price:", quote.executionPrice);
 
-// Search token by ticker
-const ethData = await agent.searchTokenByTicker("ETH");
-console.log("ETH Trading Pairs:", ethData.results);
+// Execute a swap
+const swapResult = await agent.swapTokens({
+  tokenIn: "ETH",
+  tokenOut: "USDC",
+  amount: "0.0001",
+  slippagePercentage: 0.5
+});
+console.log("Transaction hash:", swapResult.hash);
+console.log("Swapped:", swapResult.amountIn, swapResult.tokenIn);
+console.log("Received approximately:", swapResult.expectedAmountOut, swapResult.tokenOut);
+```
+
+### Market Data
+
+```typescript
+// Get token price data
+const tokenData = await agent.getTokenData("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+console.log("USDC Price:", tokenData.priceUsd);
+console.log("24h Volume:", tokenData.volume24h);
+
+// Search for tokens by ticker
+const searchResults = await agent.searchTokenByTicker("ETH");
+console.log("Search Results:", searchResults);
 ```
 
 ## Environment Setup
@@ -185,6 +199,7 @@ Interactive mode for testing agent capabilities:
 "Show me the top trading pairs for WETH"
 "Check my ETH balance"
 "Transfer 0.1 ETH to 0x..."
+"Swap 0.0001 ETH to USDC"
 ```
 
 ### Autonomous Mode
@@ -206,6 +221,7 @@ kiban-agent-kit/
 │   ├── langchain/          # LangChain integration
 │   │   ├── wallet.ts       # Wallet LangChain tools
 │   │   ├── token.ts        # Token LangChain tools
+│   │   ├── swap.ts         # Swap LangChain tools
 │   │   └── dexscreener.ts  # Market data LangChain tools
 │   ├── types/              # TypeScript types
 │   └── constants/          # Chain configs
